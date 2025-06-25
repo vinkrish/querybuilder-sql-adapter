@@ -1,0 +1,21 @@
+# Node
+node_modules
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+pnpm-debug.log
+
+# Output
+dist
+coverage
+
+# Misc
+.env
+.env.local
+.DS_Store
+
+# Jest
+junit.xml
+
+# TypeScript
+*.tsbuildinfo

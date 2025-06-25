@@ -1,0 +1,39 @@
+{
+  "name": "querybuilder-sql-adapter",
+  "version": "1.0.0",
+  "description": "Convert SQL WHERE clauses to react-querybuilder RuleGroupType",
+  "main": "src/sqlWhereToRuleGroup.ts",
+  "types": "src/sqlWhereToRuleGroup.ts",
+  "scripts": {
+    "test": "jest",
+    "test:coverage": "jest --coverage"
+  },
+  "keywords": [
+    "react-querybuilder",
+    "sql",
+    "adapter",
+    "where",
+    "rulegroup"
+  ],
+  "author": "Vinay Krishna",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "node-sql-parser": "^5.3.10",
+    "react-querybuilder": "^8.7.1",
+    "sql-formatter": "^15.6.5"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "jest": "^30.0.3",
+    "jest-junit": "^16.0.0",
+    "ts-jest": "^29.4.0",
+    "typescript": "^5.8.3"
+  },
+  "jest-junit": {
+    "outputDirectory": ".",
+    "outputName": "junit.xml"
+  }
+}

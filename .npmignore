@@ -1,0 +1,6 @@
+# Don’t publish these folders
+.github
+test
+example
+coverage
+*.log

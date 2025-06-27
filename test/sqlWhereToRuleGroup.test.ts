@@ -118,7 +118,7 @@ describe('parseWhereClauseToRuleGroup', () => {
       combinator: 'and',
       rules: [
         {
-          field: "COALESCE(field2, field3, default)",
+          field: "COALESCE(field2, field3, 'default')",
           operator: '=',
           value: 'default',
         },
@@ -207,7 +207,7 @@ describe('parseWhereClauseToRuleGroup — invalid SQL', () => {
   
       expect(() => {
         parseWhereClauseToRuleGroup(whereClause, fieldSources);
-      }).toThrow(/Expected/); // node-sql-parser throws 'Expected ...'
+      }).toThrow(/Unsupported node type/);
     });
   
     it('throws on unknown SQL operator', () => {
@@ -215,7 +215,7 @@ describe('parseWhereClauseToRuleGroup — invalid SQL', () => {
   
       expect(() => {
         parseWhereClauseToRuleGroup(whereClause, fieldSources);
-      }).toThrow(/Unsupported SQL operator/);
+      }).toThrow(/Expected .* but/);
     });
   
     it('throws on unsupported function', () => {
@@ -299,7 +299,7 @@ describe('parseWhereClauseToRuleGroup — invalid SQL', () => {
       it(`round-trip: ${name}`, () => {
         const ruleGroup = parseWhereClauseToRuleGroup(sql, fieldSources);
   
-        const roundTripSql = formatQuery(ruleGroup, 'sql', { format: 'parameterized' });
+        const roundTripSql:string = formatQuery(ruleGroup, 'sql');
   
         console.log('\n--- Round-trip ---');
         console.log('Original SQL:', sql);

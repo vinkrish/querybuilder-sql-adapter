@@ -7,7 +7,13 @@ export function parseWhereClauseToRuleGroup(
   whereClause: string,
   fieldSources?: Array<{ name: string; label?: string }>
 ): RuleGroupType {
-  const ast = parser.astify(`SELECT * FROM dummy WHERE ${whereClause}`);
+  if (!whereClause.trim()) {
+    return {
+      combinator: 'and',
+      rules: [],
+    };
+  }
+  const ast = parser.astify(`SELECT * FROM dummy WHERE ${whereClause}`) as any;
   const whereAst = Array.isArray(ast) ? ast[0]?.where : ast.where;
 
   const ruleGroup = normalizeRuleGroup(walkSqlAst(whereAst, fieldSources));
@@ -48,10 +54,34 @@ function walkSqlAst(node: any, fieldSources?: Array<{ name: string; label?: stri
         };
       }
 
+      if (node.operator === 'IS' && node.right.type === 'null') {
+        return {
+          field: buildExpressionString(node.left, fieldSources),
+          operator: 'null',
+          value: null,
+        };
+      }
+
+      if (node.operator === 'IS NOT' && node.right.type === 'null') {
+        return {
+          field: buildExpressionString(node.left, fieldSources),
+          operator: 'notNull',
+          value: null,
+        };
+      }
+      
+      if (node.operator === 'IS' && node.right.type === 'unary_expr' && node.right.operator === 'NOT' && node.right.expr.type === 'null') {
+        return {
+          field: buildExpressionString(node.left, fieldSources),
+          operator: 'notNull',
+          value: null,
+        };
+      }
+      
       return {
         field: buildExpressionString(node.left, fieldSources),
         operator: mapSqlOperatorToQueryBuilder(node.operator),
-        value: extractValue(node.right),
+        value: extractValue2(node.right),
       };
     }
 
@@ -77,8 +107,12 @@ function walkSqlAst(node: any, fieldSources?: Array<{ name: string; label?: stri
 
 function buildExpressionString(
   node: any,
-  fieldSources?: Array<{ name: string; label?: string }>
+  fieldSources?: Array<{ name: string; label?: string }>,
+  asLiteral: boolean = false
 ): string {
+  if (!node || typeof node !== 'object') {
+    throw new Error(`Invalid expression node: ${JSON.stringify(node)}`);
+  }
   switch (node.type) {
     case 'column_ref': {
       const fieldName = node.column;
@@ -92,23 +126,53 @@ function buildExpressionString(
     }
 
     case 'binary_expr': {
-      const left = buildExpressionString(node.left, fieldSources);
-      const right = buildExpressionString(node.right, fieldSources);
+      const left = buildExpressionString(node.left, fieldSources, true);
+      const right = buildExpressionString(node.right, fieldSources, true);
       return `(${left} ${node.operator} ${right})`;
     }
 
-    case 'number':
+    // case 'number':
+    // case 'string':
+    // case 'single_quote_string':
+    //   return String(extractValue(node));
+
     case 'string':
     case 'single_quote_string':
-      return String(extractValue(node));
+      return asLiteral ? `'${node.value}'` : node.value;
+
+    case 'number':
+      return `${node.value}`;
+
+    case 'bool':
+      return node.value === 'true' ? 'TRUE' : 'FALSE';
 
     case 'function': {
-      const fname = node.name.toUpperCase();
+      let fname: string;
+
+      if (typeof node.name === 'string') {
+        fname = node.name.toUpperCase();
+      } else if (
+        typeof node.name === 'object' &&
+        Array.isArray(node.name.name) &&
+        node.name.name[0]?.value
+      ) {
+        fname = String(node.name.name[0].value).toUpperCase();
+      } else {
+        throw new Error(`Unsupported or missing function name in: ${JSON.stringify(node)}`);
+      }
+
+      const rawArgs = Array.isArray(node.args?.value)
+        ? node.args.value
+        : Array.isArray(node.args)
+        ? node.args
+        : node.args !== undefined
+        ? [node.args]
+        : [];
 
       if (fname === 'COALESCE' || fname === 'IFNULL') {
-        const args = node.args.map((arg: any) =>
-          buildExpressionString(arg, fieldSources)
-        ).join(', ');
+        const args = rawArgs
+          .map((arg: any) => buildExpressionString(arg, fieldSources, true))
+          .join(', ');
         return `${fname}(${args})`;
       }
 
@@ -116,16 +180,25 @@ function buildExpressionString(
     }
 
     case 'case': {
-      const whens = node.args.map(
-        (arg: any) => `WHEN (${buildExpressionString(arg.cond, fieldSources)}) THEN ${buildExpressionString(arg.result, fieldSources)}`
-      );
-
-      const elsePart = node.default
-        ? ` ELSE ${buildExpressionString(node.default, fieldSources)}`
+      const args = node.args || [];
+      const whenClauses = args.filter((arg: any) => arg.type === 'when');
+      const elseClause = args.find((arg: any) => arg.type === 'else');
+    
+      const whenParts = whenClauses.map((arg: any) => {
+        if (!arg.cond || !arg.result) {
+          throw new Error(`Invalid WHEN clause: ${JSON.stringify(arg)}`);
+        }
+        const whenExpr = buildExpressionString(arg.cond, fieldSources, true);
+        const thenExpr = buildExpressionString(arg.result, fieldSources, true);
+        return `WHEN ${whenExpr} THEN ${thenExpr}`; // `WHEN (${whenExpr}) THEN ${thenExpr}`;
+      });
+    
+      const elsePart = elseClause
+        ? ` ELSE ${buildExpressionString(elseClause.result, fieldSources, true)}`
         : '';
-
-      return `CASE ${whens.join(' ')}${elsePart} END`;
-    }
+    
+      return `CASE ${whenParts.join(' ')}${elsePart} END`;
+    }       
 
     default:
       throw new Error(`Unsupported expression node: ${node.type}`);
@@ -133,10 +206,10 @@ function buildExpressionString(
 }
 
 function extractValue(node: any): any {
-  if (node.type === 'number' || node.type === 'string') {
-    return node.value;
+  if (node.type === 'string' || node.type === 'single_quote_string') {
+    return `${node.value}`;
   }
-  if (node.type === 'single_quote_string') {
+  if (node.type === 'number') {
     return node.value;
   }
   if (node.type === 'bool') {
@@ -144,6 +217,17 @@ function extractValue(node: any): any {
   }
   throw new Error(`Unsupported value node: ${JSON.stringify(node)}`);
 }
+
+function extractValue2(node: any): any {
+  if (node.type === 'string' || node.type === 'single_quote_string' || node.type === 'number') {
+    return node.value;
+  }
+  if (node.type === 'bool') {
+    return node.value === 'true';
+  }
+  throw new Error(`Unsupported value node: ${JSON.stringify(node)}`);
+}
+
 
 function mapSqlOperatorToQueryBuilder(operator: string): string {
   switch (operator.toUpperCase()) {

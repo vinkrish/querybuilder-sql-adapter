@@ -1,6 +1,7 @@
 {
   "name": "querybuilder-sql-adapter",
   "version": "1.0.0",
+  "type": "module",
   "description": "Convert SQL WHERE clauses to react-querybuilder RuleGroupType",
   "main": "src/sqlWhereToRuleGroup.ts",
   "types": "src/sqlWhereToRuleGroup.ts",

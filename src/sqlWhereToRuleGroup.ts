@@ -25,7 +25,7 @@ function walkSqlAst(node: any, fieldSources?: Array<{ name: string; label?: stri
   if (!node) {
     return { combinator: 'and', rules: [] };
   }
-
+  // console.log('walkSqlAst', node, fieldSources);
   switch (node.type) {
     case 'binary_expr': {
       if (node.operator === 'AND' || node.operator === 'OR') {
@@ -42,7 +42,7 @@ function walkSqlAst(node: any, fieldSources?: Array<{ name: string; label?: stri
         return {
           field: buildExpressionString(node.left, fieldSources),
           operator: 'between',
-          value: [extractValue(node.right.value[0]), extractValue(node.right.value[1])],
+          value: [extractValue(node.right.value[0], fieldSources), extractValue(node.right.value[1], fieldSources)],
         };
       }
 
@@ -50,7 +50,7 @@ function walkSqlAst(node: any, fieldSources?: Array<{ name: string; label?: stri
         return {
           field: buildExpressionString(node.left, fieldSources),
           operator: node.operator === 'IN' ? 'in' : 'notIn',
-          value: node.right.value.map((v: any) => extractValue(v)),
+          value: node.right.value.map((v: any) => extractValue(v, fieldSources)),
         };
       }
 
@@ -77,7 +77,7 @@ function walkSqlAst(node: any, fieldSources?: Array<{ name: string; label?: stri
           value: null,
         };
       }
-      
+
       return {
         field: buildExpressionString(node.left, fieldSources),
         operator: mapSqlOperatorToQueryBuilder(node.operator),
@@ -113,6 +113,7 @@ function buildExpressionString(
   if (!node || typeof node !== 'object') {
     throw new Error(`Invalid expression node: ${JSON.stringify(node)}`);
   }
+  // console.log('buildExpressionString', node, fieldSources, asLiteral);
   switch (node.type) {
     case 'column_ref': {
       const fieldName = node.column;
@@ -205,7 +206,7 @@ function buildExpressionString(
   }
 }
 
-function extractValue(node: any): any {
+function extractValue(node: any, fieldSources?: Array<{ name: string; label?: string }>): any {
   if (node.type === 'string' || node.type === 'single_quote_string') {
     return `${node.value}`;
   }
@@ -215,15 +216,21 @@ function extractValue(node: any): any {
   if (node.type === 'bool') {
     return node.value === 'true';
   }
+  if (node.type === 'function' || node.type === 'case') {
+    return buildExpressionString(node, fieldSources, true);
+  }
   throw new Error(`Unsupported value node: ${JSON.stringify(node)}`);
 }
 
-function extractValue2(node: any): any {
+function extractValue2(node: any, fieldSources?: Array<{ name: string; label?: string }>): any {
   if (node.type === 'string' || node.type === 'single_quote_string' || node.type === 'number') {
     return node.value;
   }
   if (node.type === 'bool') {
     return node.value === 'true';
+  }
+  if (node.type === 'function' || node.type === 'case') {
+    return buildExpressionString(node, fieldSources, true);
   }
   throw new Error(`Unsupported value node: ${JSON.stringify(node)}`);
 }

@@ -126,6 +126,25 @@ describe('parseWhereClauseToRuleGroup', () => {
     });
   });
 
+  it('parses CASE within COALESCE expression', () => {
+    const whereClause = `
+      score > COALESCE(discounted_price, CASE WHEN field1 = 'electronics' THEN 100 ELSE 50 END)
+    `;
+
+    const result = parseWhereClauseToRuleGroup(whereClause, fieldSources);
+
+    expect(result).toEqual({
+      combinator: 'and',
+      rules: [
+        {
+          field: 'score',
+          operator: '>',
+          value: "COALESCE(discounted_price, CASE WHEN (field1 = 'electronics') THEN 100 ELSE 50 END)",
+        },
+      ],
+    });
+  });
+
   it('parses IFNULL expression', () => {
     const whereClause = `
       IFNULL(score, 0) >= 50
@@ -246,7 +265,7 @@ describe('parseWhereClauseToRuleGroup — invalid SQL', () => {
     });
   });
 
-  describe('parseWhereClauseToRuleGroup — round-trip test', () => {
+  describe('parseWhereClauseToRuleGroup —> round-trip test', () => {
     const fieldSources = [
       { name: 'field1' },
       { name: 'field2' },

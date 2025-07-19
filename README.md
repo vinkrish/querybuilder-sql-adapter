@@ -1,7 +1,5 @@
 # querybuilder-sql-adapter
 
-# querybuilder-sql-adapter
-
 [![npm version](https://img.shields.io/npm/v/querybuilder-sql-adapter.svg)](https://www.npmjs.com/package/querybuilder-sql-adapter)
 [![npm downloads](https://img.shields.io/npm/dm/querybuilder-sql-adapter.svg)](https://www.npmjs.com/package/querybuilder-sql-adapter)
 [![License](https://img.shields.io/npm/l/querybuilder-sql-adapter.svg)](https://github.com/vinkrish/querybuilder-sql-adapter/blob/main/LICENSE)
@@ -31,8 +29,6 @@ The querybuilder-sql-adapter:
  - Parses SQL WHERE clauses using node-sql-parser
  - Transforms the AST into RuleGroupType format used by react-querybuilder
  - Supports nested expressions, CASE WHEN, COALESCE, IS NULL, BETWEEN, math expressions, and more
- - Outputs rules that can be round-tripped back to SQL
- - Supports advanced expressions using a raw: true structure for complex right-hand values
 
 ## Example
 

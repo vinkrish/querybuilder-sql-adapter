@@ -1,9 +1,10 @@
 {
   "name": "querybuilder-sql-adapter",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Convert SQL WHERE clauses to react-querybuilder RuleGroupType",
-  "main": "src/sqlWhereToRuleGroup.ts",
-  "types": "src/sqlWhereToRuleGroup.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
   "scripts": {
     "build": "tsc",
     "example": "ts-node example/usage.ts",
@@ -22,6 +23,14 @@
   "license": "MIT",
   "publishConfig": {
     "access": "public"
+  },
+    "repository": {
+    "type": "git",
+    "url": "https://github.com/vinkrish/querybuilder-sql-adapter.git"
+  },
+  "homepage": "https://github.com/vinkrish/querybuilder-sql-adapter",
+  "bugs": {
+    "url": "https://github.com/vinkrish/querybuilder-sql-adapter/issues"
   },
   "dependencies": {
     "node-sql-parser": "^5.3.10",

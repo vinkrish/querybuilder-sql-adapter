@@ -1,5 +1,13 @@
 # querybuilder-sql-adapter
 
+# querybuilder-sql-adapter
+
+[![npm version](https://img.shields.io/npm/v/querybuilder-sql-adapter.svg)](https://www.npmjs.com/package/querybuilder-sql-adapter)
+[![npm downloads](https://img.shields.io/npm/dm/querybuilder-sql-adapter.svg)](https://www.npmjs.com/package/querybuilder-sql-adapter)
+[![License](https://img.shields.io/npm/l/querybuilder-sql-adapter.svg)](https://github.com/vinkrish/querybuilder-sql-adapter/blob/main/LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/vinkrish/querybuilder-sql-adapter.svg?style=social)](https://github.com/vinkrish/querybuilder-sql-adapter/stargazers)
+
+
 ## Turning SQL WHERE Clauses into React QueryBuilder Rules — Introducing querybuilder-sql-adapter
 
 In modern UI platforms that allow users to build complex filters or queries, it’s common to use visual query builders — drag-and-drop UIs that abstract away the raw SQL or backend logic. One popular and powerful library for this is react-querybuilder. But what happens when you already have SQL WHERE clauses and want to visualize or edit them?
